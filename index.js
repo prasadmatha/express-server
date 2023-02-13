@@ -315,6 +315,18 @@ app.post("/create/card", async (req, res) => {
   }
 });
 
+app.delete("/delete/token/:id", async (req, res) => {
+  let tokenID = req.params.id;
+  let getTokensDataQuery = `update token set  status = "InActive" where id = ${tokenID}`;
+  let dbResponse = await db.run(getTokensDataQuery);
+  res
+    .status(200)
+    .send({
+      isSuccessful: true,
+      message: "Token has been suspended successfully",
+    });
+});
+
 //creating token
 app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
   let body = req.body;
@@ -364,12 +376,10 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
           });
         }
       } else {
-        res
-          .status(400)
-          .send({
-            isSuccessful: false,
-            message: `No user exists with the ID :: ${id}`,
-          });
+        res.status(400).send({
+          isSuccessful: false,
+          message: `No user exists with the ID :: ${id}`,
+        });
       }
     } else {
       res.status(400).send({
