@@ -160,7 +160,7 @@ app.post("/login", async (req, res) => {
       res.status(200).send({
         isSuccessful: true,
         message: "Received user details successfully",
-        response: dbResponse,
+        response: [dbResponse],
       });
     } else {
       res.status(400).send({ isSuccessful: false, message: "Worng Password" });
@@ -175,7 +175,7 @@ app.post("/login", async (req, res) => {
         res.status(200).send({
           isSuccessful: true,
           message: "Received user details successfully",
-          response: dbResponse,
+          response: [dbResponse],
         });
       } else {
         res
