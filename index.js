@@ -214,7 +214,43 @@ app.get("/users", async (req, res) => {
   res.send(dbResponse);
 });
 
-app.post("/user/:id/tokens", (req, res) => {});
+app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
+  let userID = req.params.id;
+  let dbResponse = await db.get(`select * from user where id = ${userID}`);
+  if (dbResponse != undefined) {
+    const cardIDQuery = `select * from card where user_id = ${userID}`;
+    dbResponse = await db.get(cardIDQuery);
+    if (dbResponse != undefined) {
+      let { id } = dbResponse;
+      let getTokensQuery = `select * from token where card_id = ${id}`;
+      dbResponse = await db.all(getTokensQuery);
+      if (dbResponse.length) {
+        res.status(200).send({
+          isSuccessful: true,
+          message: "Received tokens successfully",
+          response: dbResponse,
+        });
+      } else {
+        res.status(404).send({
+          isSuccessful: false,
+          message: "No Tokens were created for this user",
+        });
+      }
+    } else {
+      res
+        .status(400)
+        .send({
+          isSuccessful: false,
+          message: "No card exists with this user",
+        });
+    }
+  } else {
+    res.status(400).send({
+      isSuccessful: false,
+      message: `No user exists with the id :: ${userID}`,
+    });
+  }
+});
 
 app.post("/user/:id/tokens/:tokenId/info", (req, res) => {});
 
