@@ -6,10 +6,13 @@ const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
+const cors = require("cors");
+const axios = require("axios");
 const regex = require("./regex");
 const PORT = 3000;
 
 app.use(express.json());
+app.use(cors());
 
 let db = null;
 
