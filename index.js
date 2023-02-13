@@ -315,20 +315,18 @@ app.post("/create/card", async (req, res) => {
 });
 
 //creating token
-app.post("/create/token", async (req, res) => {
-  let body = req.body;
-  let { email, domainName } = body;
+app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
+  let { id, cardID } = req.params;
+  let { email, domainName } = req.body;
   let isObjectNull = Object.keys(body).length == 0 ? true : false;
   let mandatoryFieldserrors = !isObjectNull
     ? checkForMandatoryFields({ tokenInfo: { ...body } })
     : "";
   if (!isObjectNull) {
     if (!mandatoryFieldserrors.length) {
-      let user = await db.get(`select * from user where email = '${email}'`);
+      let user = await db.get(`select * from user where id = ${id}`);
       if (user != undefined) {
-        let { id } = user;
-        console.log("userid", id);
-        let query = `select * from card where user_id = ${id}`;
+        let getCardsDetailsQuery = `select * from card where user_id = ${id}`;
         let cardFound = await db.get(query);
         console.log(cardFound);
         if (cardFound != undefined) {
