@@ -7,13 +7,14 @@ const sqlite3 = require("sqlite3");
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
 const cors = require("cors");
-const axios = require("axios");
+const dotenv = require("dotenv");
+require("dotenv").config();
 const regex = require("./regex");
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
-
+dotenv.config();
 let db = null;
 const initializedbAndServer = async () => {
   try {
@@ -150,33 +151,40 @@ app.post("/create/customer", async (req, res) => {
 //user login
 app.post("/login", async (req, res) => {
   let body = req.body;
-  let dbResponse = await getData("user");
-  let userFound = dbResponse.filter((user) => {
-    if (user.email == body.email.toLowerCase()) {
-      return user;
-    }
-  });
-  if (userFound.length) {
-    console.log(userFound[0].password);
-    console.log(body.password);
-    let isPasswordMatched = await bcrypt.compare(
-      body.password,
-      userFound[0].password
-    );
-    console.log(isPasswordMatched);
-    if (isPasswordMatched) {
+  let dbResponse = await db.get(
+    `select * from user inner join card on user.id = card.user_id where user.email= '${body.email}'`
+  );
+  if (dbResponse != undefined) {
+    let dbPassword = bcrypt.compare(body.password, dbResponse.password);
+    if (dbPassword) {
       res.status(200).send({
         isSuccessful: true,
         message: "Received user details successfully",
-        response: userFound,
+        response: dbResponse,
       });
     } else {
-      res.status(400).send({ isSuccessful: false, message: "Wrong Password" });
+      res.status(400).send({ isSuccessful: false, message: "Worng Password" });
     }
   } else {
-    res
-      .status(400)
-      .send({ isSuccessful: false, message: "Email ID is not registered" });
+    dbResponse = await db.get(
+      `select * from user where email = '${body.email}'`
+    );
+    if (dbResponse != undefined) {
+      let dbPassword = bcrypt.compare(body.password, dbResponse.password);
+      if (dbPassword) {
+        res.status(200).send({
+          isSuccessful: true,
+          message: "Received user details successfully",
+          response: dbResponse,
+        });
+      } else {
+        res
+          .status(400)
+          .send({ isSuccessful: false, message: "Worng Password" });
+      }
+    } else {
+      res.status(400).send({ isSuccessful: false, message: "Wrong password" });
+    }
   }
 });
 
