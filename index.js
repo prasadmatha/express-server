@@ -151,49 +151,40 @@ app.post("/create/customer", async (req, res) => {
 //user login
 app.post("/login", async (req, res) => {
   let body = req.body;
-  let dbResponse = await db.get(
-    `select * from user inner join card on user.id = card.user_id where user.email = '${body.email}'`
-  );
-  console.log(dbResponse);
   let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
   if (!isBodyEmpty) {
     if (regex.email.test(body.email) && regex.password.test(body.password)) {
+      let getUserQuery = `select * from user where email = '${body.email}'`;
+      let dbResponse = await db.get(getUserQuery);
       if (dbResponse != undefined) {
-        let dbPassword = bcrypt.compare(body.password, dbResponse.password);
-        if (dbPassword) {
-          res.status(200).send({
-            isSuccessful: true,
-            message: "Received user details successfully",
-            response: [dbResponse],
-          });
+        let dbPassword = dbResponse.password;
+        let isPasswordMatched = await bcrypt.compare(body.password, dbPassword);
+        if (isPasswordMatched) {
+          let user_id = dbResponse.id;
+          let getCardsDataQuery = `select * from user inner join card on user.id = card.user_id where card.user_id = ${user_id} `;
+          let cardsDBResponse = await db.all(getCardsDataQuery);
+          if (cardsDBResponse.length) {
+            res.status(200).send({
+              isSuccessful: true,
+              message: "Received User details successfully",
+              response: cardsDBResponse,
+            });
+          } else {
+            res.status(200).send({
+              isSuccessful: true,
+              message: "No cards exists, received user details only",
+              response: [dbResponse],
+            });
+          }
         } else {
           res
             .status(400)
-            .send({ isSuccessful: false, message: "Worng Password" });
+            .send({ isSuccessful: false, message: "Wrong Password" });
         }
       } else {
-        dbResponse = await db.get(
-          `select * from user where email = '${body.email}'`
-        );
-        if (dbResponse != undefined) {
-          let dbPassword = bcrypt.compare(body.password, dbResponse.password);
-          if (dbPassword) {
-            res.status(200).send({
-              isSuccessful: true,
-              message: "Received user details successfully",
-              response: [dbResponse],
-            });
-          } else {
-            res
-              .status(400)
-              .send({ isSuccessful: false, message: "Worng Password" });
-          }
-        } else {
-          res.status(400).send({
-            isSuccessful: false,
-            message: "Email ID is not registered",
-          });
-        }
+        res
+          .status(400)
+          .send({ isSuccessful: false, message: "Email ID is not registered" });
       }
     } else {
       res.status(400).send({
@@ -223,8 +214,7 @@ app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
     dbResponse = await db.get(cardIDQuery);
     if (dbResponse != undefined) {
       let { id } = dbResponse;
-      console.log(id);
-      let getTokensQuery = `select * from token where card_id = ${id}`;
+      let getTokensQuery = `select * from token where card_id = ${id} and status != "InActive"`;
       dbResponse = await db.all(getTokensQuery);
       if (dbResponse.length) {
         res.status(200).send({
