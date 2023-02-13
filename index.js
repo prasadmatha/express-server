@@ -15,7 +15,6 @@ app.use(express.json());
 app.use(cors());
 
 let db = null;
-
 const initializedbAndServer = async () => {
   try {
     db = await open({
@@ -42,7 +41,7 @@ const getData = async (entity) => {
 let mandatoryFields = {
   userInfo: ["name", "email", "password", "mobile"],
   cardInfo: ["email", "cardNumber", "nameOnCard", "expDate", "cvv"],
-  token: ["email", "domainName"],
+  tokenInfo: ["email", "domainName"],
 };
 
 let duplicateFields = {
@@ -54,11 +53,9 @@ const checkForMandatoryFields = (data) => {
   let errors = [];
   let entity = Object.keys(data);
   data = data[entity];
-  console.log(data);
   let KeysInattributesOfDataObject = Object.keys(data);
   let mandatoryFieldsOfEntity = mandatoryFields[entity];
   mandatoryFieldsOfEntity.forEach((each) => {
-    console.log(data[each], each);
     if (
       !each in KeysInattributesOfDataObject ||
       !data[each] ||
@@ -84,6 +81,7 @@ const checkDuplicateFields = (data, reqBody) => {
   return errors;
 };
 
+//creating customer
 app.post("/create/customer", async (req, res) => {
   let data = await getData("user");
   let reqBody = req.body;
@@ -149,6 +147,7 @@ app.post("/create/customer", async (req, res) => {
   }
 });
 
+//user login
 app.post("/login", async (req, res) => {
   let body = req.body;
   let dbResponse = await getData("user");
@@ -190,6 +189,7 @@ app.post("/user/:id/tokens", (req, res) => {});
 
 app.post("/user/:id/tokens/:tokenId/info", (req, res) => {});
 
+//creating card
 app.post("/create/card", async (req, res) => {
   let body = req.body;
   let usersData = await getData("user");
@@ -269,77 +269,104 @@ app.post("/create/card", async (req, res) => {
   }
 });
 
+//creating token
 app.post("/create/token", async (req, res) => {
   let body = req.body;
   let { email, domainName } = body;
-  let user = await db.get(`select * from user where email = '${email}'`);
-  if (user != undefined) {
-    let { id } = user;
-    console.log("userid", id);
-    let query = `select * from card where user_id = ${id}`;
-    let cardFound = await db.get(query);
-    console.log(cardFound);
-    if (cardFound != undefined) {
-      let tokensData = await getData("token");
-      let card_id = cardFound.id;
-      if (tokensData.length) {
-        let cardTokensData = await db.all(
-          `select * from token where card_id = ${card_id}`
-        );
-        if (cardTokensData.length) {
-          let isDomainExists = cardTokensData.filter(
-            (token) => token.domain_name == body.domainName
-          );
-          isDomainExists = isDomainExists.length ? true : false;
-          if (!isDomainExists) {
-            let tokenID = tokensData[tokensData.length - 1].id + 1;
+  let isObjectNull = Object.keys(body).length == 0 ? true : false;
+  let mandatoryFieldserrors = !isObjectNull
+    ? checkForMandatoryFields({ tokenInfo: { ...body } })
+    : "";
+  if (!isObjectNull) {
+    if (!mandatoryFieldserrors.length) {
+      let user = await db.get(`select * from user where email = '${email}'`);
+      if (user != undefined) {
+        let { id } = user;
+        console.log("userid", id);
+        let query = `select * from card where user_id = ${id}`;
+        let cardFound = await db.get(query);
+        console.log(cardFound);
+        if (cardFound != undefined) {
+          let tokensData = await getData("token");
+          let card_id = cardFound.id;
+          if (tokensData.length) {
+            let cardTokensData = await db.all(
+              `select * from token where card_id = ${card_id}`
+            );
+            if (cardTokensData.length) {
+              let isDomainExists = cardTokensData.filter(
+                (token) => token.domain_name == body.domainName
+              );
+              isDomainExists = isDomainExists.length ? true : false;
+              if (!isDomainExists) {
+                let tokenID = tokensData[tokensData.length - 1].id + 1;
+                let token_number =
+                  Math.random().toFixed(13).split(".")[1] +
+                  tokenID +
+                  id +
+                  card_id;
+                let query = `insert into token(id,card_id,token_number,domain_name,status)
+              values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
+                let dbResponse = await db.run(query);
+                res.status(200).send({
+                  isSuccessful: true,
+                  message: `Token is created successfully`,
+                });
+              } else {
+                res.status(400).send({
+                  isSuccessful: false,
+                  message: "Active token already exists for this domain",
+                });
+              }
+            } else {
+              let tokenID = tokensData[tokensData.length - 1].id + 1;
+              let token_number =
+                Math.random().toFixed(13).split(".")[1] +
+                tokenID +
+                id +
+                card_id;
+              let query = `insert into token(id,card_id,token_number,domain_name,status)
+              values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
+              let dbResponse = await db.run(query);
+              res.status(200).send({
+                isSuccessful: true,
+                message: `Token is created successfully`,
+              });
+            }
+          } else {
             let token_number =
-              Math.random().toFixed(13).split(".")[1] + tokenID + id + card_id;
+              Math.random().toFixed(13).split(".")[1] + 1 + id + card_id;
             let query = `insert into token(id,card_id,token_number,domain_name,status)
-            values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
+          values(1, ${card_id},'${token_number}','${domainName}',"Active")`;
             let dbResponse = await db.run(query);
             res.status(200).send({
               isSuccessful: true,
               message: `Token is created successfully`,
             });
-          } else {
-            res.status(400).send({
-              isSuccessful: false,
-              message: "Token already exists for this domain",
-            });
           }
         } else {
-          let tokenID = tokensData[tokensData.length - 1].id + 1;
-          let token_number =
-            Math.random().toFixed(13).split(".")[1] + tokenID + id + card_id;
-          let query = `insert into token(id,card_id,token_number,domain_name,status)
-            values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
-          let dbResponse = await db.run(query);
-          res.status(200).send({
-            isSuccessful: true,
-            message: `Token is created successfully`,
+          res.status(400).send({
+            isSuccessful: false,
+            message: `The user don't have any card to create a token`,
           });
         }
       } else {
-        let token_number =
-          Math.random().toFixed(13).split(".")[1] + 1 + id + card_id;
-        let query = `insert into token(id,card_id,token_number,domain_name,status)
-        values(1, ${card_id},'${token_number}','${domainName}',"Active")`;
-        let dbResponse = await db.run(query);
-        res.status(200).send({
-          isSuccessful: true,
-          message: `Token is created successfully`,
-        });
+        res
+          .status(400)
+          .send({ isSuccessful: false, message: `Email ID is not registered` });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: `The user don't have any card to create a token`,
+        message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
+          ", "
+        )}`,
       });
     }
   } else {
-    res
-      .status(400)
-      .send({ isSuccessful: false, message: `Email ID is not registered` });
+    res.status(400).send({
+      isSuccessful: false,
+      message: "Request body should not be empty",
+    });
   }
 });

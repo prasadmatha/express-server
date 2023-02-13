@@ -6,10 +6,11 @@ let regex = {
   mobile: /^[6-9]\d{9}$/,
   username: /^[a-z0-9_\.]+$/,
   expDate: /^(0[1-9]|1[0-2])\/?([0-9]{2})$/,
-  cardNumber: /^[6-9]\d{9}$/,
+  cardNumber: /\d{4}-\d{4}-\d{4}-\d{4}$/,
   nameOnCard: /^[a-zA-Z ]+$/,
-  cvv: /^[6-9]\d{9}$/,
-  domainName: /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}$/,
+  cvv: /^([0-9]{3})$/,
+  domainName:
+    /^(http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/,
 };
 
 module.exports = regex;
