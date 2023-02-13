@@ -42,7 +42,7 @@ const getData = async (entity) => {
 let mandatoryFields = {
   userInfo: ["name", "email", "password", "mobile"],
   cardInfo: ["email", "cardNumber", "nameOnCard", "expDate", "cvv"],
-  tokenInfo: ["email", "domainName"],
+  tokenInfo: ["domainName"],
 };
 
 let duplicateFields = {
@@ -316,8 +316,9 @@ app.post("/create/card", async (req, res) => {
 
 //creating token
 app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
+  let body = req.body;
   let { id, cardID } = req.params;
-  let { email, domainName } = req.body;
+  let { email, domainName } = body;
   let isObjectNull = Object.keys(body).length == 0 ? true : false;
   let mandatoryFieldserrors = !isObjectNull
     ? checkForMandatoryFields({ tokenInfo: { ...body } })
@@ -326,71 +327,39 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
     if (!mandatoryFieldserrors.length) {
       let user = await db.get(`select * from user where id = ${id}`);
       if (user != undefined) {
-        let getCardsDetailsQuery = `select * from card where user_id = ${id}`;
-        let cardFound = await db.get(query);
-        console.log(cardFound);
+        let getCardsDetailsQuery = `select * from card where user_id = ${id} and id = ${cardID}`;
+        let cardFound = await db.get(getCardsDetailsQuery);
         if (cardFound != undefined) {
-          let tokensData = await getData("token");
-          let card_id = cardFound.id;
-          if (tokensData.length) {
-            let cardTokensData = await db.all(
-              `select * from token where card_id = ${card_id}`
-            );
-            if (cardTokensData.length) {
-              let isDomainExists = cardTokensData.filter(
-                (token) => token.domain_name == body.domainName
-              );
-              isDomainExists = isDomainExists.length ? true : false;
-              if (!isDomainExists) {
-                let tokenID = tokensData[tokensData.length - 1].id + 1;
-                let token_number =
-                  Math.random().toFixed(13).split(".")[1] +
-                  tokenID +
-                  id +
-                  card_id;
-                let query = `insert into token(id,card_id,token_number,domain_name,status)
-              values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
-                let dbResponse = await db.run(query);
-                res.status(200).send({
-                  isSuccessful: true,
-                  message: `Token is created successfully`,
-                });
-              } else {
-                res.status(400).send({
-                  isSuccessful: false,
-                  message: "Active token already exists for this domain",
-                });
-              }
-            } else {
-              let tokenID = tokensData[tokensData.length - 1].id + 1;
-              let token_number =
-                Math.random().toFixed(13).split(".")[1] +
-                tokenID +
-                id +
-                card_id;
-              let query = `insert into token(id,card_id,token_number,domain_name,status)
-              values(${tokenID}, ${card_id},'${token_number}','${domainName}',"Active")`;
-              let dbResponse = await db.run(query);
-              res.status(200).send({
-                isSuccessful: true,
-                message: `Token is created successfully`,
-              });
-            }
+          let getTokenQuery = `select * from token where card_id = ${cardID} and domain_name = '${domainName}' and status = "Active"`;
+          let tokensData = await db.get(getTokenQuery);
+          if (tokensData != undefined) {
+            res.status(400).send({
+              isSuccessful: false,
+              message: "Active token already exists for this domain",
+            });
           } else {
+            let latestTokenID = await db.get(
+              `select id from token order by id desc limit 1 offset 0`
+            );
+            console.log(latestTokenID);
+            latestTokenID = latestTokenID.id + 1;
             let token_number =
-              Math.random().toFixed(13).split(".")[1] + 1 + id + card_id;
-            let query = `insert into token(id,card_id,token_number,domain_name,status)
-          values(1, ${card_id},'${token_number}','${domainName}',"Active")`;
-            let dbResponse = await db.run(query);
+              Math.random().toFixed(13).split(".")[1] +
+              latestTokenID +
+              id +
+              cardID;
+            let dbResponse =
+              await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
+            values(${latestTokenID},${cardID},'${token_number}','${domainName}',"Active")`);
             res.status(200).send({
               isSuccessful: true,
-              message: `Token is created successfully`,
+              message: "Token is created successfully",
             });
           }
         } else {
           res.status(400).send({
             isSuccessful: false,
-            message: `The user don't have any card to create a token`,
+            message: `The user don't have the card to create a token`,
           });
         }
       } else {
