@@ -152,7 +152,7 @@ app.post("/create/customer", async (req, res) => {
 app.post("/login", async (req, res) => {
   let body = req.body;
   let dbResponse = await db.get(
-    `select * from user cross join card on user.id = card.user_id`
+    `select * from user inner join card on user.id = card.user_id where user.email = '${body.email}'`
   );
   console.log(dbResponse);
   let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
