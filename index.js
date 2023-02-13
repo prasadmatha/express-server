@@ -152,8 +152,9 @@ app.post("/create/customer", async (req, res) => {
 app.post("/login", async (req, res) => {
   let body = req.body;
   let dbResponse = await db.get(
-    `select * from user inner join card on user.id = card.user_id where user.email= '${body.email}'`
+    `select * from user cross join card on user.id = card.user_id`
   );
+  console.log(dbResponse);
   let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
   if (!isBodyEmpty) {
     if (regex.email.test(body.email) && regex.password.test(body.password)) {
@@ -188,12 +189,10 @@ app.post("/login", async (req, res) => {
               .send({ isSuccessful: false, message: "Worng Password" });
           }
         } else {
-          res
-            .status(400)
-            .send({
-              isSuccessful: false,
-              message: "Email ID is not registered",
-            });
+          res.status(400).send({
+            isSuccessful: false,
+            message: "Email ID is not registered",
+          });
         }
       }
     } else {
@@ -239,33 +238,23 @@ app.post("/create/card", async (req, res) => {
         let { id } = userFound[0];
         let cardsData = await getData("card");
         if (cardsData.length) {
-          let isUserHasCard = cardsData.filter((card) => card.user_id == id);
-          isUserHasCard = isUserHasCard.length ? true : false;
-          if (!isUserHasCard) {
-            let isDuplicateCard = cardsData.filter(
-              (card) => card.card_number == cardNumber
-            );
-            isDuplicateCard = isDuplicateCard.length ? true : false;
-            if (!isDuplicateCard) {
-              let cardID = cardsData[cardsData.length - 1].id + 1;
-              let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
-            ${cardID},${id},'${nameOnCard}','${cardNumber}','${expDate}','${cvv}'
-          )`;
-              let dbResponse = await db.run(query);
-              res.send({
-                isSuccessful: true,
-                message: `Card details are saved successfully`,
-              });
-            } else {
-              res.status(400).send({
-                isSuccessful: false,
-                message: "Duplicate card number",
-              });
-            }
+          let duplicateCard = cardsData.filter(
+            (card) => card.card_number == body.cardNumber
+          );
+          duplicateCard = duplicateCard.length ? true : false;
+          if (!duplicateCard) {
+            let cardID = cardsData[cardsData.length - 1].id + 1;
+            let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
+            ${cardID},${id},'${nameOnCard}','${cardNumber}','${expDate}','${cvv}')`;
+            let dbResponse = await db.run(query);
+            res.send({
+              isSuccessful: true,
+              message: `Card details are saved successfully`,
+            });
           } else {
             res.status(400).send({
               isSuccessful: false,
-              message: `The user has one card already`,
+              message: `Duplicate Card Number`,
             });
           }
         } else {
