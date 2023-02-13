@@ -154,37 +154,59 @@ app.post("/login", async (req, res) => {
   let dbResponse = await db.get(
     `select * from user inner join card on user.id = card.user_id where user.email= '${body.email}'`
   );
-  if (dbResponse != undefined) {
-    let dbPassword = bcrypt.compare(body.password, dbResponse.password);
-    if (dbPassword) {
-      res.status(200).send({
-        isSuccessful: true,
-        message: "Received user details successfully",
-        response: [dbResponse],
-      });
-    } else {
-      res.status(400).send({ isSuccessful: false, message: "Worng Password" });
-    }
-  } else {
-    dbResponse = await db.get(
-      `select * from user where email = '${body.email}'`
-    );
-    if (dbResponse != undefined) {
-      let dbPassword = bcrypt.compare(body.password, dbResponse.password);
-      if (dbPassword) {
-        res.status(200).send({
-          isSuccessful: true,
-          message: "Received user details successfully",
-          response: [dbResponse],
-        });
+  let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
+  if (!isBodyEmpty) {
+    if (regex.email.test(body.email) && regex.password.test(body.password)) {
+      if (dbResponse != undefined) {
+        let dbPassword = bcrypt.compare(body.password, dbResponse.password);
+        if (dbPassword) {
+          res.status(200).send({
+            isSuccessful: true,
+            message: "Received user details successfully",
+            response: [dbResponse],
+          });
+        } else {
+          res
+            .status(400)
+            .send({ isSuccessful: false, message: "Worng Password" });
+        }
       } else {
-        res
-          .status(400)
-          .send({ isSuccessful: false, message: "Worng Password" });
+        dbResponse = await db.get(
+          `select * from user where email = '${body.email}'`
+        );
+        if (dbResponse != undefined) {
+          let dbPassword = bcrypt.compare(body.password, dbResponse.password);
+          if (dbPassword) {
+            res.status(200).send({
+              isSuccessful: true,
+              message: "Received user details successfully",
+              response: [dbResponse],
+            });
+          } else {
+            res
+              .status(400)
+              .send({ isSuccessful: false, message: "Worng Password" });
+          }
+        } else {
+          res
+            .status(400)
+            .send({
+              isSuccessful: false,
+              message: "Email ID is not registered",
+            });
+        }
       }
     } else {
-      res.status(400).send({ isSuccessful: false, message: "Wrong password" });
+      res.status(400).send({
+        isSuccessful: false,
+        message: "Please provide valid email ID or Password",
+      });
     }
+  } else {
+    res.status(400).send({
+      isSuccessful: false,
+      message: "Request body should not be empty",
+    });
   }
 });
 
