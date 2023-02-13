@@ -205,6 +205,7 @@ app.get("/users", async (req, res) => {
   res.send(dbResponse);
 });
 
+//create token
 app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
   let userID = req.params.id;
   let cardID = req.params.cardID;
@@ -365,7 +366,10 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
       } else {
         res
           .status(400)
-          .send({ isSuccessful: false, message: `Email ID is not registered` });
+          .send({
+            isSuccessful: false,
+            message: `No user exists with the ID :: ${id}`,
+          });
       }
     } else {
       res.status(400).send({
