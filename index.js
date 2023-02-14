@@ -465,7 +465,7 @@ app.get("/tokenInfo/:id", async (req, res) => {
   if (tokenInfo != undefined) {
     res.status(200).send({
       isSuccessful: true,
-      message: "Receivde tokend details successfully",
+      message: "Received tokend details successfully",
       response: [tokenInfo],
     });
   } else {
