@@ -97,7 +97,7 @@ app.post("/create/customer", async (req, res) => {
         reqBody.password = hashedPassword;
         let { name, mobile, email, password } = reqBody;
         let query = `insert into user(id,name,mobile,email,password) values(
-          1,'${name}','${mobile}','${email}','${password}'
+          1,'${name}','${mobile}','${email.toLowerCase()}','${password}'
         )`;
         let dbResponse = await db.run(query);
         let { lastID } = dbResponse;
@@ -116,7 +116,7 @@ app.post("/create/customer", async (req, res) => {
           reqBody.password = hashedPassword;
           let { name, mobile, email, password } = reqBody;
           let query = `insert into user(id,name,mobile,email,password) values(
-          '${id}','${name}','${mobile}','${email}','${password}'
+          '${id}','${name}','${mobile}','${email.toLowerCase()}','${password}'
         )`;
           let dbResponse = await db.run(query);
           res.status(200).send({
@@ -154,7 +154,7 @@ app.post("/login", async (req, res) => {
   let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
   if (!isBodyEmpty) {
     if (regex.email.test(body.email) && regex.password.test(body.password)) {
-      let getUserQuery = `select * from user where email = '${body.email}'`;
+      let getUserQuery = `select * from user where email = '${body.email.toLowerCase()}'`;
       let dbResponse = await db.get(getUserQuery);
       if (dbResponse != undefined) {
         let dbPassword = dbResponse.password;
@@ -242,8 +242,6 @@ app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
     });
   }
 });
-
-app.post("/user/:id/tokens/:tokenId/info", (req, res) => {});
 
 //creating card
 app.post("/create/card", async (req, res) => {
