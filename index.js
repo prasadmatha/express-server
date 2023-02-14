@@ -617,6 +617,7 @@ app.get("/cards/all", async (req, res) => {
   try {
     let getAllCardsQuery = `select * from card`;
     let cardsInfo = await db.all(getAllCardsQuery);
+    console.log(cardsInfo);
     if (cardsInfo.length) {
       res.status(200).send({
         isSuccessful: true,
