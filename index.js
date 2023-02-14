@@ -341,7 +341,7 @@ app.post("/create/card", async (req, res) => {
               let dbResponse = await db.run(query);
               res.send({
                 isSuccessful: true,
-                message: `Card details are saved successfully`,
+                message: `Card details are saved successfully with the id :: ${cardID}`,
               });
             } else {
               res.status(400).send({
@@ -356,7 +356,7 @@ app.post("/create/card", async (req, res) => {
             let dbResponse = await db.run(query);
             res.send({
               isSuccessful: true,
-              message: `Card details are saved successfully`,
+              message: `Card details are saved successfully with the id :: 1`,
             });
           }
         } else {
@@ -396,12 +396,13 @@ app.put("/delete/token/:id", async (req, res) => {
       let dbResponse = await db.run(getTokensDataQuery);
       res.status(200).send({
         isSuccessful: true,
-        message: "Token status has been changed to InActive",
+        message: "Token was deleted successfully",
       });
     } else {
-      res
-        .status(400)
-        .send({ isSuccessful: false, message: "Token was dead already" });
+      res.status(400).send({
+        isSuccessful: false,
+        message: "Token was deleted already",
+      });
     }
   } catch (e) {
     console.log(e.message);
@@ -431,7 +432,7 @@ app.put("/suspend/token/:id", async (req, res) => {
     } else if (tokenStatus == "InActive") {
       return res.status(400).send({
         isSuccessful: false,
-        message: "Token was dead, not possible to suspend",
+        message: "Token was deleted already, not possible to suspend",
       });
     }
   } catch (e) {
@@ -461,7 +462,7 @@ app.put("/activate/token/:id", async (req, res) => {
     } else if (tokenStatus == "InActive") {
       res.status(400).send({
         isSuccessful: false,
-        message: "Token was dead, not possible to reactivate",
+        message: "Token was deleted already, not possible to reactivate",
       });
     }
   } catch (e) {
@@ -513,7 +514,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 )},'${token_number}','${domainName}',"Active")`);
               res.status(200).send({
                 isSuccessful: true,
-                message: "Token is created successfully",
+                message: `Token is created successfully with the id :: ${latestTokenID}`,
               });
             }
           } else {
@@ -612,8 +613,8 @@ app.get("/tokens/all", async (req, res) => {
   }
 });
 
-//get all tokens
-app.get("/cards/all", async (req, res) => {
+//get all cards
+app.get("/cardsInfo/all", async (req, res) => {
   console.log("Hi");
   try {
     let getAllCardsQuery = `select * from card`;
@@ -629,6 +630,6 @@ app.get("/cards/all", async (req, res) => {
       res.status(400).send({ isSuccessful: false, message: "No card exist" });
     }
   } catch (e) {
-    console.log(e.message);
+    console.log("error", e);
   }
 });
