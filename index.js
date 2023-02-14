@@ -423,9 +423,15 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 latestTokenID +
                 id +
                 cardID;
+              console.log(latestTokenID);
+              console.log(cardID);
+              console.log(token_number);
+              console.log(domainName);
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
-            values(1,2,"6645656456666666","https://www.amazon.in","Active")`);
+            values(${latestTokenID},${parseInt(
+                  cardID
+                )},'${token_number}','${domainName}',"Active")`);
               res.status(200).send({
                 isSuccessful: true,
                 message: "Token is created successfully",
