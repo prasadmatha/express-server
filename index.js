@@ -415,7 +415,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
             let latestTokenID = await db.get(
               `select id from token order by id desc limit 1 offset 0`
             );
-            console.log(latestTokenID);
+            console.log("latestTokenID", latestTokenID);
             latestTokenID = latestTokenID.id + 1;
             let token_number =
               Math.random().toFixed(13).split(".")[1] +
