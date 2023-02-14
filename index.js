@@ -614,6 +614,7 @@ app.get("/tokens/all", async (req, res) => {
 
 //get all tokens
 app.get("/cards/all", async (req, res) => {
+  console.log("Hi");
   try {
     let getAllCardsQuery = `select * from card`;
     let cardsInfo = await db.all(getAllCardsQuery);
