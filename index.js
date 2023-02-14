@@ -388,73 +388,77 @@ app.put("/active/token/:id", async (req, res) => {
 
 //creating token
 app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
-  let body = req.body;
-  let { id, cardID } = req.params;
-  let { email, domainName } = body;
-  let isObjectNull = Object.keys(body).length == 0 ? true : false;
-  let mandatoryFieldserrors = !isObjectNull
-    ? checkForMandatoryFields({ tokenInfo: { ...body } })
-    : "";
-  if (!isObjectNull) {
-    if (!mandatoryFieldserrors.length) {
-      let user = await db.get(`select * from user where id = ${id}`);
-      if (user != undefined) {
-        let getCardsDetailsQuery = `select * from card where user_id = ${id} and id = ${cardID}`;
-        let cardFound = await db.get(getCardsDetailsQuery);
-        if (cardFound != undefined) {
-          let getTokenQuery = `select * from token where card_id = ${cardID} and domain_name = '${domainName}' and status = "Active"`;
-          let tokensData = await db.get(getTokenQuery);
-          if (tokensData != undefined) {
+  try {
+    let body = req.body;
+    let { id, cardID } = req.params;
+    let { email, domainName } = body;
+    let isObjectNull = Object.keys(body).length == 0 ? true : false;
+    let mandatoryFieldserrors = !isObjectNull
+      ? checkForMandatoryFields({ tokenInfo: { ...body } })
+      : "";
+    if (!isObjectNull) {
+      if (!mandatoryFieldserrors.length) {
+        let user = await db.get(`select * from user where id = ${id}`);
+        if (user != undefined) {
+          let getCardsDetailsQuery = `select * from card where user_id = ${id} and id = ${cardID}`;
+          let cardFound = await db.get(getCardsDetailsQuery);
+          if (cardFound != undefined) {
+            let getTokenQuery = `select * from token where card_id = ${cardID} and domain_name = '${domainName}' and status = "Active"`;
+            let tokensData = await db.get(getTokenQuery);
+            if (tokensData != undefined) {
+              res.status(400).send({
+                isSuccessful: false,
+                message: "Active token already exists for this domain",
+              });
+            } else {
+              let latestTokenID = await db.get(
+                `select id from token order by id desc limit 1 offset 0`
+              );
+              if (latestTokenID == undefined) {
+                latestTokenID = 0;
+              }
+              latestTokenID = latestTokenID.id + 1;
+              let token_number =
+                Math.random().toFixed(13).split(".")[1] +
+                latestTokenID +
+                id +
+                cardID;
+              let dbResponse =
+                await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
+            values(${latestTokenID},${cardID},'${token_number}','${domainName}',"Active")`);
+              res.status(200).send({
+                isSuccessful: true,
+                message: "Token is created successfully",
+              });
+            }
+          } else {
             res.status(400).send({
               isSuccessful: false,
-              message: "Active token already exists for this domain",
-            });
-          } else {
-            let latestTokenID = await db.get(
-              `select id from token order by id desc limit 1 offset 0`
-            );
-            if (latestTokenID == undefined) {
-              latestTokenID = 0;
-            }
-            latestTokenID = latestTokenID.id + 1;
-            let token_number =
-              Math.random().toFixed(13).split(".")[1] +
-              latestTokenID +
-              id +
-              cardID;
-            let dbResponse =
-              await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
-            values(${latestTokenID},${cardID},'${token_number}','${domainName}',"Active")`);
-            res.status(200).send({
-              isSuccessful: true,
-              message: "Token is created successfully",
+              message: `The user don't have the card to create a token`,
             });
           }
         } else {
           res.status(400).send({
             isSuccessful: false,
-            message: `The user don't have the card to create a token`,
+            message: `No user exists with the ID :: ${id}`,
           });
         }
       } else {
         res.status(400).send({
           isSuccessful: false,
-          message: `No user exists with the ID :: ${id}`,
+          message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
+            ", "
+          )}`,
         });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
-          ", "
-        )}`,
+        message: "Request body should not be empty",
       });
     }
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "Request body should not be empty",
-    });
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
