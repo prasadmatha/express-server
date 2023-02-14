@@ -229,6 +229,25 @@ app.get("/users", async (req, res) => {
   }
 });
 
+//get cards info
+app.get("/cardInfo/:id", async (req, res) => {
+  let cardId = req.params.id;
+  let getCardInfoQuery = `select * from card where id = ${cardId}`;
+  let cardInfo = await db.get(getCardInfoQuery);
+  if (cardInfo != undefined) {
+    res.status(200).send({
+      isSuccessful: true,
+      message: "Received card details successfully",
+      response: cardInfo,
+    });
+  } else {
+    res.status(400).send({
+      isSuccessful: false,
+      message: `No card exists with the id :: ${cardId}`,
+    });
+  }
+});
+
 //get tokens info
 app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
   try {
