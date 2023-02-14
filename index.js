@@ -425,6 +425,10 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 latestTokenID +
                 id +
                 cardID;
+              console.log(typeof latestTokenID);
+              console.log(typeof cardID);
+              console.log(typeof token_number);
+              console.log(typeof domainName);
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
             values(${latestTokenID},${parseInt(
