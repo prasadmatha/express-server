@@ -547,6 +547,25 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
   }
 });
 
+//Get Cards of a User
+app.get("/cards/:id", async (req, res) => {
+  let userID = req.params.id;
+  let getCardsInfoQuery = `select * from card where user_id = ${userID}`;
+  let cardsInfo = await db.all(getCardsInfoQuery);
+  if (cardsInfo.length) {
+    res.status(200).send({
+      isSuccessful: true,
+      message: "Received cards details successfully",
+      response: cardsInfo,
+    });
+  } else {
+    res.status(400).send({
+      isSuccessful: false,
+      message: "No card exists for this user",
+    });
+  }
+});
+
 //Get Token Info
 app.get("/tokenInfo/:id", async (req, res) => {
   try {
