@@ -248,6 +248,25 @@ app.get("/cardInfo/:id", async (req, res) => {
   }
 });
 
+//get customer info
+app.get("/customerInfo/:id", async (req, res) => {
+  let customerId = req.params.id;
+  let getCustomerInfoQuery = `select * from user where id = ${customerId}`;
+  let customerInfo = await db.get(getCustomerInfoQuery);
+  if (customerInfo != undefined) {
+    res.status(200).send({
+      isSuccessful: true,
+      message: "Received customer details successfully",
+      response: customerInfo,
+    });
+  } else {
+    res.status(400).send({
+      isSuccessful: false,
+      message: `No customer exists with the id :: ${customerId}`,
+    });
+  }
+});
+
 //get tokens info
 app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
   try {
