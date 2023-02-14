@@ -389,11 +389,9 @@ app.put("/active/token/:id", async (req, res) => {
 //creating token
 app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
   try {
-    console.log(req.params);
-    console.log(req.body);
     let body = req.body;
     let { id, cardID } = req.params;
-    let { email, domainName } = body;
+    let { domainName } = body;
     let isObjectNull = Object.keys(body).length == 0 ? true : false;
     let mandatoryFieldserrors = !isObjectNull
       ? checkForMandatoryFields({ tokenInfo: { ...body } })
@@ -425,10 +423,6 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 latestTokenID +
                 id +
                 cardID;
-              console.log(typeof latestTokenID);
-              console.log(typeof cardID);
-              console.log(typeof token_number);
-              console.log(typeof domainName);
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
             values(${latestTokenID},${parseInt(
