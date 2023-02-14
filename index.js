@@ -419,7 +419,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
               if (latestTokenID == undefined) {
                 latestTokenID = 0;
               }
-              latestTokenID = latestTokenID.id + 1;
+              latestTokenID = parseInt(latestTokenID.id) + 1;
               let token_number =
                 Math.random().toFixed(13).split(".")[1] +
                 latestTokenID +
@@ -427,7 +427,9 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 cardID;
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
-            values(${latestTokenID},${cardID},'${token_number}','${domainName}',"Active")`);
+            values(${latestTokenID},${parseInt(
+                  cardID
+                )},'${token_number}','${domainName}',"Active")`);
               res.status(200).send({
                 isSuccessful: true,
                 message: "Token is created successfully",
