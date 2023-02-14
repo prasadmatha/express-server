@@ -402,7 +402,7 @@ app.put("/suspend/token/:id", async (req, res) => {
 });
 
 //activate token
-app.put("/active/token/:id", async (req, res) => {
+app.put("/activate/token/:id", async (req, res) => {
   try {
     let tokenID = req.params.id;
     let tokenStatusQuery = `select status from token where id=${tokenID}`;
