@@ -457,6 +457,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
   }
 });
 
+//Get Token Info
 app.get("/tokenInfo/:id", async (req, res) => {
   let tokenID = req.params.id;
   let getTokenInfoQuery = `select * from token where id = ${tokenID}`;
