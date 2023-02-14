@@ -539,7 +539,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: "Request body should not be empty",
+        message: "Please send valid domain to create a token",
       });
     }
   } catch (e) {
@@ -549,20 +549,24 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
 
 //Get Cards of a User
 app.get("/cards/:id", async (req, res) => {
-  let userID = req.params.id;
-  let getCardsInfoQuery = `select * from card where user_id = ${userID}`;
-  let cardsInfo = await db.all(getCardsInfoQuery);
-  if (cardsInfo.length) {
-    res.status(200).send({
-      isSuccessful: true,
-      message: "Received cards details successfully",
-      response: cardsInfo,
-    });
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "No card exists for this user",
-    });
+  try {
+    let userID = req.params.id;
+    let getCardsInfoQuery = `select * from card where user_id = ${userID}`;
+    let cardsInfo = await db.all(getCardsInfoQuery);
+    if (cardsInfo.length) {
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Received cards details successfully",
+        response: cardsInfo,
+      });
+    } else {
+      res.status(400).send({
+        isSuccessful: false,
+        message: "No card exists for this user",
+      });
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
@@ -583,6 +587,44 @@ app.get("/tokenInfo/:id", async (req, res) => {
         isSuccessful: false,
         message: `No token exists with the id :: ${tokenID}`,
       });
+    }
+  } catch (e) {
+    console.log(e.message);
+  }
+});
+
+//get all tokens
+app.get("/tokens/all", async (req, res) => {
+  try {
+    let getAllTokensQuery = `select * from token`;
+    let tokensInfo = await db.all(getAllTokensQuery);
+    if (tokensInfo.length) {
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Received tokens details successfully",
+        response: tokensInfo,
+      });
+    } else {
+      res.status(400).send({ isSuccessful: false, message: "No token exist" });
+    }
+  } catch (e) {
+    console.log(e.message);
+  }
+});
+
+//get all tokens
+app.get("/cards/all", async (req, res) => {
+  try {
+    let getAllCardsQuery = `select * from card`;
+    let cardsInfo = await db.all(getAllCardsQuery);
+    if (cardsInfo.length) {
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Received cards details successfully",
+        response: cardsInfo,
+      });
+    } else {
+      res.status(400).send({ isSuccessful: false, message: "No card exist" });
     }
   } catch (e) {
     console.log(e.message);
