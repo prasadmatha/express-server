@@ -389,6 +389,8 @@ app.put("/active/token/:id", async (req, res) => {
 //creating token
 app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
   try {
+    console.log(req.params);
+    console.log(req.body);
     let body = req.body;
     let { id, cardID } = req.params;
     let { email, domainName } = body;
