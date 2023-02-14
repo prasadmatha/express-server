@@ -317,7 +317,7 @@ app.post("/create/card", async (req, res) => {
 app.put("/delete/token/:id", async (req, res) => {
   let tokenID = req.params.id;
   let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.run(tokenStatusQuery);
+  let tokenStatus = await db.get(tokenStatusQuery);
   tokenStatus = tokenStatus.status;
   if (tokenStatus == "Active" || tokenStatus == "Suspended") {
     let getTokensDataQuery = `update token set  status = "InActive" where id = ${tokenID}`;
@@ -337,8 +337,9 @@ app.put("/delete/token/:id", async (req, res) => {
 app.put("/suspend/token/:id", async (req, res) => {
   let tokenID = req.params.id;
   let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.run(tokenStatusQuery);
+  let tokenStatus = await db.get(tokenStatusQuery);
   tokenStatus = tokenStatus.status;
+  console.log(tokenStatus);
   if (tokenStatus == "Active") {
     let getTokensDataQuery = `update token set  status = "Suspended" where id = ${tokenID}`;
     let dbResponse = await db.run(getTokensDataQuery);
@@ -352,7 +353,7 @@ app.put("/suspend/token/:id", async (req, res) => {
       message: "The token has been suspended already.",
     });
   } else if (tokenStatus == "InActive") {
-    res.status(400).send({
+    return res.status(400).send({
       isSuccessful: false,
       message: "Token was dead, not possible to suspend",
     });
@@ -363,7 +364,7 @@ app.put("/suspend/token/:id", async (req, res) => {
 app.put("/active/token/:id", async (req, res) => {
   let tokenID = req.params.id;
   let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.run(tokenStatusQuery);
+  let tokenStatus = await db.get(tokenStatusQuery);
   tokenStatus = tokenStatus.status;
   if (tokenStatus == "Suspended") {
     let getTokensDataQuery = `update token set  status = "Active" where id = ${tokenID}`;
