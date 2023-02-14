@@ -51,338 +51,383 @@ let duplicateFields = {
 };
 
 const checkForMandatoryFields = (data) => {
-  let errors = [];
-  let entity = Object.keys(data);
-  data = data[entity];
-  let KeysInattributesOfDataObject = Object.keys(data);
-  let mandatoryFieldsOfEntity = mandatoryFields[entity];
-  mandatoryFieldsOfEntity.forEach((each) => {
-    if (
-      !each in KeysInattributesOfDataObject ||
-      !data[each] ||
-      !regex[each].test(data[each])
-    ) {
-      errors.push(each);
-    }
-  });
-  return errors;
+  try {
+    let errors = [];
+    let entity = Object.keys(data);
+    data = data[entity];
+    let KeysInattributesOfDataObject = Object.keys(data);
+    let mandatoryFieldsOfEntity = mandatoryFields[entity];
+    mandatoryFieldsOfEntity.forEach((each) => {
+      if (
+        !each in KeysInattributesOfDataObject ||
+        !data[each] ||
+        !regex[each].test(data[each])
+      ) {
+        errors.push(each);
+      }
+    });
+    return errors;
+  } catch (e) {
+    console.log(e.message);
+  }
 };
 
 const checkDuplicateFields = (data, reqBody) => {
-  let errors = [];
-  let entity = Object.keys(reqBody);
-  reqBody = reqBody[entity];
-  data.forEach((entry) => {
-    for (let eachField of duplicateFields[entity]) {
-      if (entry[eachField] == reqBody[eachField]) {
-        errors.push(eachField);
+  try {
+    let errors = [];
+    let entity = Object.keys(reqBody);
+    reqBody = reqBody[entity];
+    data.forEach((entry) => {
+      for (let eachField of duplicateFields[entity]) {
+        if (entry[eachField] == reqBody[eachField]) {
+          errors.push(eachField);
+        }
       }
-    }
-  });
-  return errors;
+    });
+    return errors;
+  } catch (e) {
+    console.log(e.message);
+  }
 };
 
 //creating customer
 app.post("/create/customer", async (req, res) => {
-  let data = await getData("user");
-  let reqBody = req.body;
-  let isObjectNull = Object.keys(reqBody).length == 0 ? true : false;
-  let mandatoryFieldserrors = !isObjectNull
-    ? checkForMandatoryFields({ userInfo: { ...reqBody } })
-    : "";
-  if (!isObjectNull) {
-    if (!mandatoryFieldserrors.length) {
-      if (!data.length) {
-        let hashedPassword = await bcrypt.hash(reqBody.password, 10);
-        reqBody.password = hashedPassword;
-        let { name, mobile, email, password } = reqBody;
-        let query = `insert into user(id,name,mobile,email,password) values(
-          1,'${name}','${mobile}','${email.toLowerCase()}','${password}'
-        )`;
-        let dbResponse = await db.run(query);
-        let { lastID } = dbResponse;
-        res.status(200).send({
-          isSuccessful: true,
-          message: `user is created successfully with the id :: ${lastID}`,
-        });
-      } else {
-        let duplicateFieldsErrors = checkDuplicateFields(data, {
-          userInfo: { ...reqBody },
-        });
-        if (!duplicateFieldsErrors.length) {
-          let lengthOfData = data.length;
-          let id = data[lengthOfData - 1].id + 1;
+  try {
+    let data = await getData("user");
+    let reqBody = req.body;
+    let isObjectNull = Object.keys(reqBody).length == 0 ? true : false;
+    let mandatoryFieldserrors = !isObjectNull
+      ? checkForMandatoryFields({ userInfo: { ...reqBody } })
+      : "";
+    if (!isObjectNull) {
+      if (!mandatoryFieldserrors.length) {
+        if (!data.length) {
           let hashedPassword = await bcrypt.hash(reqBody.password, 10);
           reqBody.password = hashedPassword;
           let { name, mobile, email, password } = reqBody;
           let query = `insert into user(id,name,mobile,email,password) values(
-          '${id}','${name}','${mobile}','${email.toLowerCase()}','${password}'
+          1,'${name}','${mobile}','${email.toLowerCase()}','${password}'
         )`;
           let dbResponse = await db.run(query);
+          let { lastID } = dbResponse;
           res.status(200).send({
             isSuccessful: true,
-            message: `user is created successfully with the id :: ${id}`,
+            message: `user is created successfully with the id :: ${lastID}`,
           });
         } else {
-          res.status(400).send({
-            isSuccessful: false,
-            message: `duplicate fields already exists :: ${duplicateFieldsErrors.join(
-              ", "
-            )}`,
+          let duplicateFieldsErrors = checkDuplicateFields(data, {
+            userInfo: { ...reqBody },
           });
+          if (!duplicateFieldsErrors.length) {
+            let lengthOfData = data.length;
+            let id = data[lengthOfData - 1].id + 1;
+            let hashedPassword = await bcrypt.hash(reqBody.password, 10);
+            reqBody.password = hashedPassword;
+            let { name, mobile, email, password } = reqBody;
+            let query = `insert into user(id,name,mobile,email,password) values(
+          '${id}','${name}','${mobile}','${email.toLowerCase()}','${password}'
+        )`;
+            let dbResponse = await db.run(query);
+            res.status(200).send({
+              isSuccessful: true,
+              message: `user is created successfully with the id :: ${id}`,
+            });
+          } else {
+            res.status(400).send({
+              isSuccessful: false,
+              message: `duplicate fields already exists :: ${duplicateFieldsErrors.join(
+                ", "
+              )}`,
+            });
+          }
         }
+      } else {
+        res.status(400).send({
+          isSuccessful: false,
+          message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
+            ", "
+          )}`,
+        });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
-          ", "
-        )}`,
+        message: `Request body should not be empty`,
       });
     }
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: `Request body should not be empty`,
-    });
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 //user login
 app.post("/login", async (req, res) => {
-  let body = req.body;
-  let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
-  if (!isBodyEmpty) {
-    if (regex.email.test(body.email) && regex.password.test(body.password)) {
-      let getUserQuery = `select * from user where email = '${body.email.toLowerCase()}'`;
-      let dbResponse = await db.get(getUserQuery);
-      if (dbResponse != undefined) {
-        let dbPassword = dbResponse.password;
-        let isPasswordMatched = await bcrypt.compare(body.password, dbPassword);
-        if (isPasswordMatched) {
-          let user_id = dbResponse.id;
-          let getCardsDataQuery = `select * from user inner join card on user.id = card.user_id where card.user_id = ${user_id} `;
-          let cardsDBResponse = await db.all(getCardsDataQuery);
-          if (cardsDBResponse.length) {
-            res.status(200).send({
-              isSuccessful: true,
-              message: "Received User details successfully",
-              response: cardsDBResponse,
-            });
+  try {
+    let body = req.body;
+    let isBodyEmpty = Object.keys(body).length == 0 ? true : false;
+    if (!isBodyEmpty) {
+      if (regex.email.test(body.email) && regex.password.test(body.password)) {
+        let getUserQuery = `select * from user where email = '${body.email.toLowerCase()}'`;
+        let dbResponse = await db.get(getUserQuery);
+        if (dbResponse != undefined) {
+          let dbPassword = dbResponse.password;
+          let isPasswordMatched = await bcrypt.compare(
+            body.password,
+            dbPassword
+          );
+          if (isPasswordMatched) {
+            let user_id = dbResponse.id;
+            let getCardsDataQuery = `select * from user inner join card on user.id = card.user_id where card.user_id = ${user_id} `;
+            let cardsDBResponse = await db.all(getCardsDataQuery);
+            if (cardsDBResponse.length) {
+              res.status(200).send({
+                isSuccessful: true,
+                message: "Received User details successfully",
+                response: cardsDBResponse,
+              });
+            } else {
+              res.status(200).send({
+                isSuccessful: true,
+                message: "No cards exists, received user details only",
+                response: [dbResponse],
+              });
+            }
           } else {
-            res.status(200).send({
-              isSuccessful: true,
-              message: "No cards exists, received user details only",
-              response: [dbResponse],
-            });
+            res
+              .status(400)
+              .send({ isSuccessful: false, message: "Wrong Password" });
           }
         } else {
-          res
-            .status(400)
-            .send({ isSuccessful: false, message: "Wrong Password" });
+          res.status(400).send({
+            isSuccessful: false,
+            message: "Email ID is not registered",
+          });
         }
       } else {
-        res
-          .status(400)
-          .send({ isSuccessful: false, message: "Email ID is not registered" });
+        res.status(400).send({
+          isSuccessful: false,
+          message: "Please provide valid email ID or Password",
+        });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: "Please provide valid email ID or Password",
+        message: "Request body should not be empty",
       });
     }
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "Request body should not be empty",
-    });
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 app.get("/users", async (req, res) => {
-  let dbResponse = await getData("user");
-  res.send(dbResponse);
+  try {
+    let dbResponse = await getData("user");
+    res.send(dbResponse);
+  } catch (e) {
+    console.log(e.message);
+  }
 });
 
 //get tokens info
 app.get("/user/:id/card/:cardID/tokens", async (req, res) => {
-  let userID = req.params.id;
-  let cardID = req.params.cardID;
-  let dbResponse = await db.get(`select * from user where id = ${userID}`);
-  if (dbResponse != undefined) {
-    const cardIDQuery = `select * from card where id = ${cardID} and user_id = ${userID}`;
-    dbResponse = await db.get(cardIDQuery);
+  try {
+    let userID = req.params.id;
+    let cardID = req.params.cardID;
+    let dbResponse = await db.get(`select * from user where id = ${userID}`);
     if (dbResponse != undefined) {
-      let { id } = dbResponse;
-      let getTokensQuery = `select * from token where card_id = ${id} and status != "InActive"`;
-      dbResponse = await db.all(getTokensQuery);
-      if (dbResponse.length) {
-        res.status(200).send({
-          isSuccessful: true,
-          message: "Received tokens successfully",
-          response: dbResponse,
-        });
+      const cardIDQuery = `select * from card where id = ${cardID} and user_id = ${userID}`;
+      dbResponse = await db.get(cardIDQuery);
+      if (dbResponse != undefined) {
+        let { id } = dbResponse;
+        let getTokensQuery = `select * from token where card_id = ${id} and status != "InActive"`;
+        dbResponse = await db.all(getTokensQuery);
+        if (dbResponse.length) {
+          res.status(200).send({
+            isSuccessful: true,
+            message: "Received tokens successfully",
+            response: dbResponse,
+          });
+        } else {
+          res.status(404).send({
+            isSuccessful: false,
+            message: "No Tokens were created for this card",
+          });
+        }
       } else {
-        res.status(404).send({
+        res.status(400).send({
           isSuccessful: false,
-          message: "No Tokens were created for this card",
+          message: "card not exists with this user",
         });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: "card not exists with this user",
+        message: `No user exists with the id :: ${userID}`,
       });
     }
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: `No user exists with the id :: ${userID}`,
-    });
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 //creating card
 app.post("/create/card", async (req, res) => {
-  let body = req.body;
-  let usersData = await getData("user");
-  let isObjectNull = Object.keys(body).length == 0 ? true : false;
-  let mandatoryFieldserrors = !isObjectNull
-    ? checkForMandatoryFields({ cardInfo: { ...body } })
-    : "";
-  if (!isObjectNull) {
-    if (!mandatoryFieldserrors.length) {
-      let { email, cardNumber, nameOnCard, expDate, cvv } = body;
-      let userFound = usersData.filter((user) => {
-        if (user.email == email.toLowerCase()) {
-          return user;
-        }
-      });
-      if (userFound.length) {
-        let { id } = userFound[0];
-        let cardsData = await getData("card");
-        if (cardsData.length) {
-          let duplicateCard = cardsData.filter(
-            (card) => card.card_number == body.cardNumber
-          );
-          duplicateCard = duplicateCard.length ? true : false;
-          if (!duplicateCard) {
-            let cardID = cardsData[cardsData.length - 1].id + 1;
-            let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
+  try {
+    let body = req.body;
+    let usersData = await getData("user");
+    let isObjectNull = Object.keys(body).length == 0 ? true : false;
+    let mandatoryFieldserrors = !isObjectNull
+      ? checkForMandatoryFields({ cardInfo: { ...body } })
+      : "";
+    if (!isObjectNull) {
+      if (!mandatoryFieldserrors.length) {
+        let { email, cardNumber, nameOnCard, expDate, cvv } = body;
+        let userFound = usersData.filter((user) => {
+          if (user.email == email.toLowerCase()) {
+            return user;
+          }
+        });
+        if (userFound.length) {
+          let { id } = userFound[0];
+          let cardsData = await getData("card");
+          if (cardsData.length) {
+            let duplicateCard = cardsData.filter(
+              (card) => card.card_number == body.cardNumber
+            );
+            duplicateCard = duplicateCard.length ? true : false;
+            if (!duplicateCard) {
+              let cardID = cardsData[cardsData.length - 1].id + 1;
+              let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
             ${cardID},${id},'${nameOnCard}','${cardNumber}','${expDate}','${cvv}')`;
+              let dbResponse = await db.run(query);
+              res.send({
+                isSuccessful: true,
+                message: `Card details are saved successfully`,
+              });
+            } else {
+              res.status(400).send({
+                isSuccessful: false,
+                message: `Duplicate Card Number`,
+              });
+            }
+          } else {
+            let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
+        1,${id},'${nameOnCard}','${cardNumber}','${expDate}','${cvv}'
+      )`;
             let dbResponse = await db.run(query);
             res.send({
               isSuccessful: true,
               message: `Card details are saved successfully`,
             });
-          } else {
-            res.status(400).send({
-              isSuccessful: false,
-              message: `Duplicate Card Number`,
-            });
           }
         } else {
-          let query = `insert into card(id,user_id,name_on_card,card_number,exp_date,cvv) values(
-        1,${id},'${nameOnCard}','${cardNumber}','${expDate}','${cvv}'
-      )`;
-          let dbResponse = await db.run(query);
-          res.send({
-            isSuccessful: true,
-            message: `Card details are saved successfully`,
+          res.status(400).send({
+            isSuccessful: false,
+            message: "Email ID is not registered",
           });
         }
       } else {
-        res
-          .status(400)
-          .send({ isSuccessful: false, message: "Email ID is not registered" });
+        res.status(400).send({
+          isSuccessful: false,
+          message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
+            ", "
+          )}`,
+        });
       }
     } else {
       res.status(400).send({
         isSuccessful: false,
-        message: `Mandatory fields should be provided with valid data :: ${mandatoryFieldserrors.join(
-          ", "
-        )}`,
+        message: "Request body should not be empty",
       });
     }
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "Request body should not be empty",
-    });
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 //deleting token
 app.put("/delete/token/:id", async (req, res) => {
-  let tokenID = req.params.id;
-  let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.get(tokenStatusQuery);
-  tokenStatus = tokenStatus.status;
-  if (tokenStatus == "Active" || tokenStatus == "Suspended") {
-    let getTokensDataQuery = `update token set  status = "InActive" where id = ${tokenID}`;
-    let dbResponse = await db.run(getTokensDataQuery);
-    res.status(200).send({
-      isSuccessful: true,
-      message: "Token status has been changed to InActive",
-    });
-  } else {
-    res
-      .status(400)
-      .send({ isSuccessful: false, message: "Token was dead already" });
+  try {
+    let tokenID = req.params.id;
+    let tokenStatusQuery = `select status from token where id=${tokenID}`;
+    let tokenStatus = await db.get(tokenStatusQuery);
+    tokenStatus = tokenStatus.status;
+    if (tokenStatus == "Active" || tokenStatus == "Suspended") {
+      let getTokensDataQuery = `update token set  status = "InActive" where id = ${tokenID}`;
+      let dbResponse = await db.run(getTokensDataQuery);
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Token status has been changed to InActive",
+      });
+    } else {
+      res
+        .status(400)
+        .send({ isSuccessful: false, message: "Token was dead already" });
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 //suspending token
 app.put("/suspend/token/:id", async (req, res) => {
-  let tokenID = req.params.id;
-  let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.get(tokenStatusQuery);
-  tokenStatus = tokenStatus.status;
-  console.log(tokenStatus);
-  if (tokenStatus == "Active") {
-    let getTokensDataQuery = `update token set  status = "Suspended" where id = ${tokenID}`;
-    let dbResponse = await db.run(getTokensDataQuery);
-    res.status(200).send({
-      isSuccessful: true,
-      message: "Token has been suspended successfully",
-    });
-  } else if (tokenStatus == "Suspended") {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "The token has been suspended already.",
-    });
-  } else if (tokenStatus == "InActive") {
-    return res.status(400).send({
-      isSuccessful: false,
-      message: "Token was dead, not possible to suspend",
-    });
+  try {
+    let tokenID = req.params.id;
+    let tokenStatusQuery = `select status from token where id=${tokenID}`;
+    let tokenStatus = await db.get(tokenStatusQuery);
+    tokenStatus = tokenStatus.status;
+    console.log(tokenStatus);
+    if (tokenStatus == "Active") {
+      let getTokensDataQuery = `update token set  status = "Suspended" where id = ${tokenID}`;
+      let dbResponse = await db.run(getTokensDataQuery);
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Token has been suspended successfully",
+      });
+    } else if (tokenStatus == "Suspended") {
+      res.status(400).send({
+        isSuccessful: false,
+        message: "The token has been suspended already.",
+      });
+    } else if (tokenStatus == "InActive") {
+      return res.status(400).send({
+        isSuccessful: false,
+        message: "Token was dead, not possible to suspend",
+      });
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
 //activate token
 app.put("/active/token/:id", async (req, res) => {
-  let tokenID = req.params.id;
-  let tokenStatusQuery = `select status from token where id=${tokenID}`;
-  let tokenStatus = await db.get(tokenStatusQuery);
-  tokenStatus = tokenStatus.status;
-  if (tokenStatus == "Suspended") {
-    let getTokensDataQuery = `update token set  status = "Active" where id = ${tokenID}`;
-    let dbResponse = await db.run(getTokensDataQuery);
-    res.status(200).send({
-      isSuccessful: true,
-      message: "Token has been Active successfully.",
-    });
-  } else if (tokenStatus == "Active") {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "The token is in Active state already.",
-    });
-  } else if (tokenStatus == "InActive") {
-    res.status(400).send({
-      isSuccessful: false,
-      message: "Token was dead, not possible to activate",
-    });
+  try {
+    let tokenID = req.params.id;
+    let tokenStatusQuery = `select status from token where id=${tokenID}`;
+    let tokenStatus = await db.get(tokenStatusQuery);
+    tokenStatus = tokenStatus.status;
+    if (tokenStatus == "Suspended") {
+      let getTokensDataQuery = `update token set  status = "Active" where id = ${tokenID}`;
+      let dbResponse = await db.run(getTokensDataQuery);
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Token has been Activated successfully.",
+      });
+    } else if (tokenStatus == "Active") {
+      res.status(400).send({
+        isSuccessful: false,
+        message: "The token is in Active state already.",
+      });
+    } else if (tokenStatus == "InActive") {
+      res.status(400).send({
+        isSuccessful: false,
+        message: "Token was dead, not possible to reactivate",
+      });
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 });
 
@@ -423,10 +468,6 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
                 latestTokenID +
                 id +
                 cardID;
-              console.log(latestTokenID);
-              console.log(cardID);
-              console.log(token_number);
-              console.log(domainName);
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
             values(${latestTokenID},${parseInt(
@@ -470,19 +511,23 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
 
 //Get Token Info
 app.get("/tokenInfo/:id", async (req, res) => {
-  let tokenID = req.params.id;
-  let getTokenInfoQuery = `select * from token where id = ${tokenID}`;
-  let tokenInfo = await db.get(getTokenInfoQuery);
-  if (tokenInfo != undefined) {
-    res.status(200).send({
-      isSuccessful: true,
-      message: "Received tokend details successfully",
-      response: [tokenInfo],
-    });
-  } else {
-    res.status(400).send({
-      isSuccessful: false,
-      message: `No token exists with the id :: ${tokenID}`,
-    });
+  try {
+    let tokenID = req.params.id;
+    let getTokenInfoQuery = `select * from token where id = ${tokenID}`;
+    let tokenInfo = await db.get(getTokenInfoQuery);
+    if (tokenInfo != undefined) {
+      res.status(200).send({
+        isSuccessful: true,
+        message: "Received tokend details successfully",
+        response: [tokenInfo],
+      });
+    } else {
+      res.status(400).send({
+        isSuccessful: false,
+        message: `No token exists with the id :: ${tokenID}`,
+      });
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 });
