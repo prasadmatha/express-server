@@ -220,7 +220,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+app.get("/", async (req, res) => {
   try {
     let dbResponse = await getData("user");
     res.send(dbResponse);
