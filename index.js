@@ -503,10 +503,7 @@ app.post("/user/:id/card/:cardID/create/token", async (req, res) => {
               }
               latestTokenID = parseInt(latestTokenID.id) + 1;
               let token_number =
-                Math.random().toFixed(13).split(".")[1] +
-                latestTokenID +
-                id +
-                cardID;
+                Math.random().toFixed(16).split(".")[1];
               let dbResponse =
                 await db.run(`insert into token (id,card_id,token_number,domain_name,status) 
             values(${latestTokenID},${parseInt(
